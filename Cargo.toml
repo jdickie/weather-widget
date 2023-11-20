@@ -1,7 +1,9 @@
 [package]
 name = "weather-widget"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+authors = ["Grant Dickie<jgrantd@gmail.com>"]
+license = "Mozilla Public License 2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,4 +12,17 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.108" }
 reqwest = {version = "0.11.22", features = ["blocking", "json"]}
 aws-config = "0.100.0"
+lambda_http = "0.8.3"
+lambda_runtime = "0.8.3"
+tokio = { version = "1", features = ["macros"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+tracing = { version = "0.1", features = ["log"] }
+openssl = { version = "0.10.35", features = ["vendored"] }
+
+# Configuration for Cargo Lambda Deploy - https://www.cargo-lambda.info/commands/deploy.html
+[package.metadata.lambda.deploy]
+memory=256
+timeout=28 # API Gateway is 30 seconds
+tracing = "active"
+tags = { "service" = "weather-widget" }
 
