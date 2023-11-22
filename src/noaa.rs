@@ -23,8 +23,6 @@ pub struct GridPointData {
     headers
 }
 
-
-
 pub async fn get_grid_point(x: &f32, y: &f32) -> Result<GridPointData, reqwest::Error> {
     let client: reqwest::Client = reqwest::Client::new();
     let point_url: String = format!("https://api.weather.gov/points/{},{}", x, y);
