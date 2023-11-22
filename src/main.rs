@@ -1,21 +1,20 @@
-use lambda_http::{Response, Body, Request, RequestExt, Error, run, service_fn};
+use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
 mod images;
 mod noaa;
 
 #[derive(Default)]
 struct TempData {
     display_temperature: String,
-
 }
 
 fn format_for_display(grid_point: &noaa::weather_api::GridPointData) -> TempData {
     let img: String = images::conversion::convert_to_image(&grid_point.short_forecast);
-    let data: TempData = TempData { 
+    let data: TempData = TempData {
         display_temperature: format!("<div class=\"weather\"><h1>{}</h1> <p><img src=\"{}\"/> <p><strong>{}</strong>{}<br>{}</p></div>", 
         grid_point.name,
         img,
-        grid_point.temperature, 
-        grid_point.temperature_unit, 
+        grid_point.temperature,
+        grid_point.temperature_unit,
         grid_point.short_forecast) };
     data
 }
@@ -25,13 +24,20 @@ fn format_for_display(grid_point: &noaa::weather_api::GridPointData) -> TempData
 //
 async fn produce_html(event: Request) -> Result<Response<Body>, Error> {
     let x: f32 = event
-    .query_string_parameters_ref()
-    .and_then(|params| params.first("x"))
-    .unwrap_or("39.1").parse().unwrap();
-    let y: f32 = event.query_string_parameters_ref().and_then(|params| params.first("y")).unwrap_or("-76").parse().unwrap();
-    let grid: noaa::weather_api::GridPointData  = noaa::weather_api::get_grid_point(&x, &y).await?;
+        .query_string_parameters_ref()
+        .and_then(|params| params.first("x"))
+        .unwrap_or("39.1")
+        .parse()
+        .unwrap();
+    let y: f32 = event
+        .query_string_parameters_ref()
+        .and_then(|params| params.first("y"))
+        .unwrap_or("-76")
+        .parse()
+        .unwrap();
+    let grid: noaa::weather_api::GridPointData = noaa::weather_api::get_grid_point(&x, &y).await?;
 
-    let d: TempData  = format_for_display(&grid);
+    let d: TempData = format_for_display(&grid);
     let resp: Response<Body> = Response::builder()
         .status(200)
         .header("content-type", "text/html")
@@ -55,12 +61,12 @@ async fn main() -> Result<(), Error> {
 
 #[cfg(test)]
 mod main_test {
-  use super::*;
+    use super::*;
 
-  #[tokio::test]
-  async fn test_produce_html_defaults() {
-      let request = lambda_http::Request::new("".into());
+    #[tokio::test]
+    async fn test_produce_html_defaults() {
+        let request = lambda_http::Request::new("".into());
 
-      let _response = produce_html(request).await.expect("Expected no errors");
-  }
+        let _response = produce_html(request).await.expect("Expected no errors");
+    }
 }
