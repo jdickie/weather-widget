@@ -8,7 +8,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: build
+      - name: toolchain
         uses: actions-rs/toolchain@v1
         with:
+          toolchain: nightly
+          override: true
+      - name: build
+        uses: actions-rs/cargo@v1
+        with:
           command: build
+      - name: test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
