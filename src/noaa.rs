@@ -5,6 +5,7 @@
 pub mod weather_api {
     use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, USER_AGENT};
     use serde_json::Value;
+    use std::env;
 
     #[derive(Default)]
     pub struct GridPointData {
@@ -16,10 +17,14 @@ pub mod weather_api {
     }
 
     fn get_headers() -> HeaderMap {
-        let mut headers = HeaderMap::new();
+        let mut user_agent: String = String::from("weather-widget");
+        let user_agent_affix: String = env::var("USER_AGENT").unwrap_or_default();
+        user_agent.push_str(&user_agent_affix.as_str());
+
+        let mut headers: HeaderMap = HeaderMap::new();
         headers.insert(
             USER_AGENT,
-            HeaderValue::from_static("weather-widget jgrantd@gmail.com"),
+                HeaderValue::from_str(&user_agent).unwrap()
         );
         headers.insert(ACCEPT, HeaderValue::from_static("application/ld+json"));
         headers
@@ -61,4 +66,11 @@ pub mod weather_api {
             .replace("\"", "");
         Ok(output)
     }
+
+    #[test]
+    fn test_get_headers() {
+        let header: HeaderMap = get_headers();
+        assert_eq!(header.get(USER_AGENT).unwrap(), "weather-widget")
+    }
 }
+
