@@ -1,6 +1,8 @@
-use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
+use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response, request::RequestContext};
+mod geoip;
 mod images;
 mod noaa;
+use std::collections::HashMap;
 
 #[derive(Default)]
 struct TempData {
@@ -19,23 +21,28 @@ fn format_for_display(grid_point: &noaa::weather_api::GridPointData) -> TempData
     data
 }
 
+fn get_ip_address_or_default(event: Request) -> String {
+    let request_context: lambda_http::request::RequestContext = event.request_context();
+    let source_ip = match request_context {
+        RequestContext::ApiGatewayV2(req ) => req.http.source_ip.unwrap(),
+        RequestContext::Alb(_) => String::from("73.212.162.22"),
+        RequestContext::ApiGatewayV1(req) => req.identity.source_ip.unwrap(),
+        RequestContext::WebSocket(req) => req.identity.source_ip.unwrap()
+    };
+    source_ip
+}
+
 // Primary function that is called from the main handler
 // HTTP requests should have an x and y query string parameter. Will upgrade to POST bodies in the future.
 //
 async fn produce_html(event: Request) -> Result<Response<Body>, Error> {
-    let x: f32 = event
-        .query_string_parameters_ref()
-        .and_then(|params| params.first("x"))
-        .unwrap_or("39.1")
-        .parse()
-        .unwrap();
-    let y: f32 = event
-        .query_string_parameters_ref()
-        .and_then(|params| params.first("y"))
-        .unwrap_or("-76")
-        .parse()
-        .unwrap();
-    let grid: noaa::weather_api::GridPointData = noaa::weather_api::get_grid_point(&x, &y).await?;
+    let ip = get_ip_address_or_default(event);
+    let lat_long: HashMap<&str, f64> = geoip::geoip::get_geoip_latlon(&ip).await?;
+    let grid: noaa::weather_api::GridPointData = noaa::weather_api::get_grid_point(
+        lat_long.get("lat").unwrap(),
+        lat_long.get("lon").unwrap(),
+    )
+    .await?;
 
     let d: TempData = format_for_display(&grid);
     let resp: Response<Body> = Response::builder()

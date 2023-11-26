@@ -22,36 +22,29 @@ pub mod weather_api {
         user_agent.push_str(&user_agent_affix.as_str());
 
         let mut headers: HeaderMap = HeaderMap::new();
-        headers.insert(
-            USER_AGENT,
-                HeaderValue::from_str(&user_agent).unwrap()
-        );
+        headers.insert(USER_AGENT, HeaderValue::from_str(&user_agent).unwrap());
         headers.insert(ACCEPT, HeaderValue::from_static("application/ld+json"));
         headers
     }
 
-    pub async fn get_grid_point(x: &f32, y: &f32) -> Result<GridPointData, reqwest::Error> {
+    pub async fn get_grid_point(x: &f64, y: &f64) -> Result<GridPointData, reqwest::Error> {
         let client: reqwest::Client = reqwest::Client::new();
         let point_url: String = format!("https://api.weather.gov/points/{},{}", x, y);
-        let point_result: String = client
+        let point_data: Value = client
             .get(point_url)
             .headers(get_headers())
             .send()
             .await?
-            .text()
+            .json()
             .await?;
-        println!("{}", point_result);
-        let point_data: Value = serde_json::from_str(&point_result).unwrap();
         let gridpoint_url: String = point_data["forecast"].to_string().replace("\"", "");
-        println!("{}", gridpoint_url);
-        let text: String = client
+        let value: Value = client
             .get(gridpoint_url)
             .headers(get_headers())
             .send()
             .await?
-            .text()
+            .json()
             .await?;
-        let value: Value = serde_json::from_str(&text).unwrap();
         let mut output: GridPointData = GridPointData::default();
         output.name = value["periods"][0]["name"].to_string().replace("\"", "");
         output.start_time = value["periods"][0]["startTime"]
@@ -70,7 +63,6 @@ pub mod weather_api {
     #[test]
     fn test_get_headers() {
         let header: HeaderMap = get_headers();
-        assert_eq!(header.get(USER_AGENT).unwrap(), "weather-widget")
+        assert_eq!(header.get(USER_AGENT).unwrap(), "weather-widget");
     }
 }
-
