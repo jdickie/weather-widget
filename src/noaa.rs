@@ -60,6 +60,7 @@ pub mod weather_api {
         Ok(output)
     }
 
+    #[cfg(test)]
     #[test]
     fn test_get_headers() {
         let header: HeaderMap = get_headers();

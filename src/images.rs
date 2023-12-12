@@ -1,12 +1,13 @@
 pub mod conversion {
     use std::collections::HashMap;
-
+    
     pub fn convert_to_image(str: &String) -> String {
         let weather_image_map: HashMap<&str, &str> = HashMap::from([
             ("Cloudy", "cloudy.img"),
             ("Clear", "clear.img"),
             ("Fog", "patch.img"),
             ("Sunny", "sun.img"),
+            ("Rain", "rain.png")
         ]);
         let mut img: String = String::new();
         for (key, url) in weather_image_map {
@@ -29,6 +30,18 @@ mod image_tests {
     fn test_match_sunny() {
         let should_be_sunny = convert_to_image(&String::from("It is quite sunny today"));
         assert_eq!(should_be_sunny, "sun.img");
+    }
+
+    #[test]
+    fn test_match_rain() {
+        let should_be_rain = convert_to_image(&String::from("rainy"));
+        assert_eq!(should_be_rain, "rain.png");
+    }
+
+    #[test]
+    fn test_match_fog() {
+        let should_be_foggy = convert_to_image(&String::from("foggy"));
+        assert_eq!(should_be_foggy, "patch.img");
     }
 
     #[test]
